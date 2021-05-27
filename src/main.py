@@ -15,7 +15,10 @@ def create_table(cur: sqlite3.Cursor, table: str, cols):
     query = "CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL" % table
     for arg in cols:
         query += ", " + str(arg).replace("'", "\\'") + " VARCHAR(64)"
-    query += ")"
+    query += ", UNIQUE (" + cols[0]
+    for arg in cols[1:]:
+        query += ", " + arg
+    query += "))"
     print(query)
     cur.execute(query)
 
