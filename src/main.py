@@ -9,8 +9,18 @@ def csv_getData(path: str):
         print(csv_data[0])
     return csv_data
 
-def insert_db(cur: sqlite3.Cursor, table: str, data):
-    query = ("INSERT INTO %s VALUES (NULL" % table) + ", ?"*len(data[0]) + ")"
+def create_table(cur: sqlite3.Cursor, table: str, cols):
+    # sqlite doesn't enforce varchar lengths
+    # Also, if someone knows a way to use prepared statements in a create table statement, we should implement that here.
+    query = "CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL" % table
+    for arg in cols:
+        query += ", " + str(arg).replace("'", "\\'") + " VARCHAR(64)"
+    query += ")"
+    print(query)
+    cur.execute(query)
+
+def insert_table(cur: sqlite3.Cursor, table: str, data):
+    query = ("INSERT INTO %s VALUES (NULL" % table) + ", ?"*len(data[0]) + ")" #generates a prepared insert statement. only sql-injectable thing here is table name, which we get as a command-line arg
     print(query)
     cur.executemany(query, data)
 
@@ -25,7 +35,8 @@ def main(args):
         print("Could not create cursor")
         exit
     csv_data = csv_getData(args.csv_path)   # csv needs to be loaded into an array before we can do anything with it
-    insert_db(cur, args.table_name, csv_data[1:])
+    create_table(cur, args.table_name, csv_data[0]) #pass the first row as the table entry names
+    insert_table(cur, args.table_name, csv_data[1:])
     db.commit()
 
 if __name__ == "__main__":
